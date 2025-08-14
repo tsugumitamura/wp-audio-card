@@ -1,5 +1,5 @@
 === WP Audio Card ===
-Contributors: yourname
+Contributors: TsugumiTamura
 Tags: audio, player, html5, shortcode
 Requires at least: 5.8
 Tested up to: 6.6
