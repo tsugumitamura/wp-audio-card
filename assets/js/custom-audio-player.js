@@ -2,8 +2,12 @@
   // mm:ss 形式
   const fmt = (sec) => {
     if (!isFinite(sec) || sec < 0) return "00:00";
-    const s = Math.floor(sec % 60).toString().padStart(2, "0");
-    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60)
+      .toString()
+      .padStart(2, "0");
+    const m = Math.floor(sec / 60)
+      .toString()
+      .padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -18,18 +22,28 @@
 
   // 最終手段：末尾へダミーシーク → duration を確定させる（再生はしない）
   const forceResolveDuration = (audio, durEl, onDone) => {
-    if (applyDurationUI(audio, durEl)) { onDone?.(); return; }
-    if (audio.readyState < 1) { onDone?.(); return; } // メタデータ未取得
+    if (applyDurationUI(audio, durEl)) {
+      onDone?.();
+      return;
+    }
+    if (audio.readyState < 1) {
+      onDone?.();
+      return;
+    } // メタデータ未取得
 
     const prevTime = audio.currentTime;
     const onSeeked = () => {
-      applyDurationUI(audio, durEl);          // seeked後は大抵 duration が入る
-      try { audio.currentTime = prevTime || 0; } catch(_) {}
+      applyDurationUI(audio, durEl);
+      try {
+        audio.currentTime = prevTime || 0;
+      } catch (_) {}
       audio.removeEventListener("seeked", onSeeked);
       onDone?.();
     };
     audio.addEventListener("seeked", onSeeked, { once: true });
-    try { audio.currentTime = 1e7; } catch(_) {
+    try {
+      audio.currentTime = 1e7;
+    } catch (_) {
       audio.removeEventListener("seeked", onSeeked);
       onDone?.();
     }
@@ -37,13 +51,11 @@
 
   // Safari等対策：イベント＋短時間ポーリング＋ダミーシーク
   const ensureDuration = (audio, durEl, onReady) => {
-    // 1) 即時チェック
     if (applyDurationUI(audio, durEl)) {
       onReady?.();
       return;
     }
 
-    // 2) イベントで拾う
     const tryApply = () => {
       if (applyDurationUI(audio, durEl)) {
         detach();
@@ -52,45 +64,51 @@
       }
       return false;
     };
-    const evs = ["loadedmetadata", "durationchange", "loadeddata", "canplay", "canplaythrough"];
-    const handlers = evs.map(ev => {
-      const h = () => { tryApply(); };
+    const evs = [
+      "loadedmetadata",
+      "durationchange",
+      "loadeddata",
+      "canplay",
+      "canplaythrough",
+    ];
+    const handlers = evs.map((ev) => {
+      const h = () => {
+        tryApply();
+      };
       audio.addEventListener(ev, h);
       return [ev, h];
     });
-    const detach = () => handlers.forEach(([ev,h]) => audio.removeEventListener(ev, h));
+    const detach = () =>
+      handlers.forEach(([ev, h]) => audio.removeEventListener(ev, h));
 
-    // 3) ポーリング（最大4秒）
     const started = Date.now();
     const tid = setInterval(() => {
       if (tryApply() || Date.now() - started > 4000) {
         clearInterval(tid);
         detach();
-        if (!applyDurationUI(audio, durEl)) {
-          // 4) まだダメなら、ダミーシークで確定
+        if (!applyDurationUI(audio, durEl))
           forceResolveDuration(audio, durEl, onReady);
-        } else {
-          onReady?.();
-        }
+        else onReady?.();
       }
     }, 120);
 
-    // preload="none" ならメタデータ取得を促す
-    try { if (audio.preload === "none") audio.load(); } catch(_) {}
+    try {
+      if (audio.preload === "none") audio.load();
+    } catch (_) {}
   };
 
-  // 5段階ボリューム（0/25/50/75/100%）
-  const VLEVELS = [0, 0.25, 0.5, 0.75, 1];
+  // 5段階ボリューム（左端は非ゼロ＝ミュート扱いにしない）
+  const VLEVELS = [0.1, 0.25, 0.5, 0.75, 1];
 
   const initPlayer = (root) => {
-    const audio    = root.querySelector(".cap__audio");
-    const btnPlay  = root.querySelector(".cap__play");
-    const seek     = root.querySelector(".cap__seek");
-    const cur      = root.querySelector(".cap__current");
-    const dur      = root.querySelector(".cap__duration");
-    const muteBtn  = root.querySelector(".cap__mute");
-    const volBars  = root.querySelectorAll(".cap__volbar");
-    const volList  = root.querySelector(".cap__volbars");
+    const audio = root.querySelector(".cap__audio");
+    const btnPlay = root.querySelector(".cap__play");
+    const seek = root.querySelector(".cap__seek");
+    const cur = root.querySelector(".cap__current");
+    const dur = root.querySelector(".cap__duration");
+    const muteBtn = root.querySelector(".cap__mute");
+    const volBars = root.querySelectorAll(".cap__volbar");
+    const volList = root.querySelector(".cap__volbars");
 
     // 初期値
     audio.volume = 0.8;
@@ -112,18 +130,15 @@
 
     // 再生/一時停止
     btnPlay.addEventListener("click", () => {
-      if (audio.paused) audio.play(); else audio.pause();
+      if (audio.paused) audio.play();
+      else audio.pause();
     });
-    audio.addEventListener("play",  updatePlayState);
+    audio.addEventListener("play", updatePlayState);
     audio.addEventListener("pause", updatePlayState);
     audio.addEventListener("ended", updatePlayState);
 
     // 総時間の確定（ページロード直後）
-    ensureDuration(audio, dur, () => {
-      // 初期表示で一度だけ背景反映
-      setSeekBG();
-    });
-    // 念のため少し遅らせてもう一度
+    ensureDuration(audio, dur, () => setSeekBG());
     setTimeout(() => ensureDuration(audio, dur, setSeekBG), 300);
 
     // シーク最大値（%で扱う）
@@ -135,16 +150,14 @@
       const p = (audio.currentTime / (audio.duration || 1)) * 100 || 0;
       seek.value = p;
       cur.textContent = fmt(audio.currentTime);
-      // 進捗背景の更新（Chrome/Safari）
       seek.style.setProperty("--value", `${p}%`);
     });
 
-    // ドラッグ中プレビュー（UIのみ更新）
+    // ドラッグ中プレビュー
     seek.addEventListener("input", () => {
       isDragging = true;
       const t = (seek.value / 100) * (audio.duration || 0);
       cur.textContent = fmt(t);
-      // ドラッグ中も背景を更新
       seek.style.setProperty("--value", `${seek.value}%`);
     });
 
@@ -153,7 +166,6 @@
       const t = (seek.value / 100) * (audio.duration || 0);
       audio.currentTime = t;
       isDragging = false;
-      // 念のため背景も確定値で更新
       seek.style.setProperty("--value", `${seek.value}%`);
     });
 
@@ -168,42 +180,53 @@
       applyMuteUI();
     });
 
-    // 5段階ボリューム制御
+    // 5段階ボリューム制御（左端はミュートにしない＆音量変更で自動アンミュート）
     const setVolumeByIndex = (idx) => {
       const clamped = Math.max(0, Math.min(4, idx));
-      audio.volume = VLEVELS[clamped];
-      audio.muted = (clamped === 0);
+      const vol = VLEVELS[clamped];
+
+      audio.volume = vol;
+
+      // ミュート状態で音量を上げたら自動でアンミュート
+      if (audio.muted && vol > 0) audio.muted = false;
       applyMuteUI();
 
-      volBars.forEach((el, i) => el.classList.toggle("is-on", i <= clamped - 1));
+      // バーのハイライト（0〜clamped を点灯）
+      volBars.forEach((el, i) => el.classList.toggle("is-on", i <= clamped));
 
       const percent = Math.round(audio.volume * 100);
       volList.setAttribute("aria-valuenow", String(percent));
       volList.setAttribute("aria-valuetext", `${percent}% volume`);
     };
 
+    // 各バーのイベント&アクセシビリティ
     volBars.forEach((bar, i) => {
-      bar.addEventListener("click", () => setVolumeByIndex(i + 1));
+      const percent = Math.round(VLEVELS[i] * 100); // 10/25/50/75/100
+      bar.setAttribute("tabindex", "0");
+      bar.setAttribute("role", "button");
+      bar.setAttribute("aria-label", `Set volume to ${percent}%`);
+
+      bar.addEventListener("click", () => setVolumeByIndex(i));
       bar.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          setVolumeByIndex(i + 1);
+          setVolumeByIndex(i);
         }
       });
-      bar.setAttribute("tabindex", "0");
-      bar.setAttribute("role", "button");
-      bar.setAttribute("aria-label", "Set volume");
     });
 
     // キーボード左右で音量調整
     volList.addEventListener("keydown", (e) => {
-      const curIdx = VLEVELS.findIndex(v => v >= audio.volume - 0.001);
+      const curIdx = Math.max(
+        0,
+        VLEVELS.findIndex((v) => audio.volume <= v)
+      ); // ざっくり現在段
       if (e.key === "ArrowRight") setVolumeByIndex(Math.min(4, curIdx + 1));
-      if (e.key === "ArrowLeft")  setVolumeByIndex(Math.max(0, curIdx - 1));
+      if (e.key === "ArrowLeft") setVolumeByIndex(Math.max(0, curIdx - 1));
     });
 
     // 初期UI
-    setVolumeByIndex(4);
+    setVolumeByIndex(4); // デフォルト100%
     applyMuteUI();
     updatePlayState();
   };
