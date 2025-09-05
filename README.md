@@ -27,16 +27,29 @@ WordPress 用の軽量カスタム音声プレイヤーです。
 <?php echo do_shortcode('[audio_card src="https://example.com/sample.mp3" title="番組CMナレーション" genre="ハイテンション・バラエティ"]'); ?>
 ```
 
+- プロキシ配信をオフにする場合（直接URLを利用）
+```php
+<?php echo do_shortcode('[audio_card src="https://example.com/sample.mp3" title="Direct" secure="0"]'); ?>
+```
+
+- 明示的にオンにする場合（デフォルトはオン）
+```php
+<?php echo do_shortcode('[audio_card src="https://example.com/sample.mp3" title="Secure" secure="1"]'); ?>
+```
+
 ## ショートコード属性
 
-| 属性名    | 必須 | 説明                         | デフォルト | 
-| --------- | ---- | ---------------------------- | ---------- | 
-| `src`     | 必須 | MP3ファイルのURL             | -          | 
-| `title`   | 任意 | トラックタイトル             | Untitled   | 
-| `genre`   | 任意 | ジャンル名                   | 空         | 
-| `preload` | 任意 | `none` / `metadata` / `auto` | metadata   | 
+| 属性名    | 必須 | 説明                                                                 | デフォルト |
+| --------- | ---- | -------------------------------------------------------------------- | ---------- |
+| `src`     | 必須 | MP3ファイルのURL                                                     | -          |
+| `title`   | 任意 | トラックタイトル                                                     | Untitled   |
+| `genre`   | 任意 | ジャンル名                                                           | 空         |
+| `preload` | 任意 | `none` / `metadata` / `auto`                                         | metadata   |
+| `secure`  | 任意 | トークン付きプロキシ配信を使うか（`1/0`, `true/false`, `yes/no` 等） | 1          |
 
-
+注意:
+- `secure=1` の場合、同一サイトのメディアライブラリ（uploads）配下の mp3 のみプロキシ対象です。対象外URLは自動で直接URLにフォールバックします。
+- トークンの有効期限は 10 分（変更可）。完全なダウンロード防止は不可能ですが、直リンク共有の抑止に有効です。
 
 ## よくある質問（FAQ）
 
@@ -54,11 +67,16 @@ Safariは総時間の取得が遅れる場合がありますが、本プラグ�
 
 ## 更新履歴（Changelog）
 
-### 1.0.0
+### 1.1.0
+- 短期トークン付きプロキシ配信（REST）を追加
+- shortcode に secure 属性を追加（デフォルト on、失敗時は元URLにフォールバック）
+- uploads 判定をパス基準に修正（ホスト/ポート差異を許容）
+- Range リクエスト対応、IP紐づけ、トークン有効期限設定
 
+### 1.0.0
 初回リリース
 
 ## アップグレード情報（Upgrade Notice）
 
-1.0.0
-初回リリース
+1.1.0
+プロキシ配信を導入（互換性あり）。キャッシュをクリアしてください。
