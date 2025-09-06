@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Audio Card
  * Description: シンプルなカスタム音声プレイヤー（タイトル・ジャンル・シーク・5段階ボリューム）。
- * Version:     1.1.0
+ * Version:     1.1.2
  * Author:      TsugumiTamura
  * License:     MIT
  * Text Domain: wp-audio-card
@@ -11,7 +11,7 @@
 if (!defined('ABSPATH')) exit;
 
 final class WP_Audio_Card {
-  const VER = '1.1.0';
+  const VER = '1.1.2';
   const HANDLE_JS  = 'wp-audio-card-js';
   const HANDLE_CSS = 'wp-audio-card-css';
   // 追加: REST ルートとトークン有効期限

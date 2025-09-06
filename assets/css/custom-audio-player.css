@@ -161,3 +161,8 @@
   .cap__controls { grid-template-columns: auto 1fr; grid-auto-flow: row; }
   .cap__volume   { justify-self: start; }
 }
+
+/* iOSではハードウェア音量依存にしてUIを隠す */
+@supports (-webkit-touch-callout: none) {
+  .cap__volbars { display: none; }
+}
